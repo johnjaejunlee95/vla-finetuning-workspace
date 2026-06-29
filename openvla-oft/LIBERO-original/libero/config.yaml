@@ -1,0 +1,5 @@
+assets: /nfs2/jjlee/code/Vision-Language-Action/openvla/LIBERO-original/libero/libero/./assets
+bddl_files: /nfs2/jjlee/code/Vision-Language-Action/openvla/LIBERO-original/libero/libero/./bddl_files
+benchmark_root: /nfs2/jjlee/code/Vision-Language-Action/openvla/LIBERO-original/libero/libero
+datasets: /nfs2/jjlee/code/Vision-Language-Action/openvla/LIBERO-original/libero/datasets
+init_states: /nfs2/jjlee/code/Vision-Language-Action/openvla/LIBERO-original/libero/libero/./init_files
