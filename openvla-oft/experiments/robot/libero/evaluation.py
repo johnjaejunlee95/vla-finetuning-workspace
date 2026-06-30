@@ -93,6 +93,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 EPISODE_RESULT_COLUMNS = ["episode_name", "success counts", "total_counts", "success_rate"]
+SEED_SUMMARY_COLUMNS = [
+    "seed_trial_index",
+    "env_seed",
+    "total_episodes",
+    "total_successes",
+    "total_success_rate",
+]
 
 
 @dataclass
@@ -141,7 +148,8 @@ class GenerateConfig:
     
     is_rollout: bool = False                         # Whether to save rollout videos
     
-    seed: int = 7                                    # Random Seed (for reproducibility)
+    seed: int = 123                                    # Master seed for multi-seed environment evaluation
+    trial_num: int = 3                               # Number of environment-seed trials to run
 
     # fmt: on
 
@@ -154,6 +162,7 @@ def validate_config(cfg: GenerateConfig) -> None:
         assert cfg.center_crop, "Expecting `center_crop==True` because model was trained with image augmentations!"
 
     assert not (cfg.load_in_8bit and cfg.load_in_4bit), "Cannot use both 8-bit and 4-bit quantization!"
+    assert cfg.trial_num > 0, f"trial_num must be positive, got {cfg.trial_num}"
 
     # Validate task suite
     task_suite_name = get_task_suite_name(cfg)
@@ -261,6 +270,30 @@ def estimate_time_left(elapsed_seconds, completed, total):
     return elapsed_seconds / completed * remaining
 
 
+def resolve_seed_list(cfg: GenerateConfig):
+    trial_num = int(cfg.trial_num)
+    if trial_num <= 0:
+        raise ValueError(f"trial_num must be positive, got {trial_num}")
+
+    seed_span = 9999
+    if trial_num > seed_span:
+        raise ValueError(f"trial_num={trial_num} exceeds available unique env seeds (<9999): {seed_span}")
+
+    master_seed_generator = np.random.SeedSequence(int(cfg.seed))
+    trial_seed_sequences = master_seed_generator.spawn(trial_num)
+
+    used = set()
+    seed_list = []
+    for seq in trial_seed_sequences:
+        raw = int(seq.generate_state(1, dtype=np.uint32)[0])
+        candidate = raw % seed_span
+        while candidate in used:
+            candidate = (candidate + 1) % seed_span
+        used.add(candidate)
+        seed_list.append(candidate)
+    return seed_list
+
+
 def prepare_save_dirs(cfg: GenerateConfig):
     save_root = Path("results")
     task_suite_name = get_task_suite_name(cfg)
@@ -326,6 +359,10 @@ def initialize_episode_results_csv(csv_path):
     initialize_csv(csv_path, EPISODE_RESULT_COLUMNS)
 
 
+def initialize_seed_summary_csv(csv_path):
+    initialize_csv(csv_path, SEED_SUMMARY_COLUMNS)
+
+
 def append_episode_result_csv(csv_path, episode_name, success_counts, total_counts):
     success_rate = success_counts / total_counts if total_counts else 0.0
     row = {
@@ -335,6 +372,10 @@ def append_episode_result_csv(csv_path, episode_name, success_counts, total_coun
         "success_rate": success_rate,
     }
     append_csv_row(csv_path, row, EPISODE_RESULT_COLUMNS)
+
+
+def append_seed_summary_csv(csv_path, seed_summary):
+    append_csv_row(csv_path, seed_summary, SEED_SUMMARY_COLUMNS)
 
 
 def create_clean_summary(df, value_col, index_col="trial_index", col_col="task_description"):
@@ -510,15 +551,24 @@ def run_task(
     save_dirs=None,
     episode_csv_path=None,
     all_trial_results=None,
+    env_seed=None,
+    seed_trial_index=0,
+    total_seed_trials=1,
     log_file=None,
 ):
     """Run evaluation for a single task."""
     task = task_suite.get_task(task_id)
     initial_states, all_initial_states = load_initial_states(cfg, task_suite, task_id, log_file)
     env, task_description = get_libero_env(task, cfg.model_family, resolution=cfg.env_img_res)
+    if env_seed is not None:
+        env.seed(int(env_seed))
 
     task_episodes, task_successes = 0, 0
-    log_message(f"\nTask {task_id + 1}/{num_tasks}: {task_description}", log_file)
+    log_message(
+        f"\nSeed trial {seed_trial_index + 1}/{total_seed_trials} "
+        f"(env_seed={env_seed}) | Task {task_id + 1}/{num_tasks}: {task_description}",
+        log_file,
+    )
 
     try:
         for episode_idx in range(cfg.num_trials_per_task):
@@ -534,7 +584,7 @@ def run_task(
 
                 initial_state = np.array(all_initial_states[initial_states_task_key][episode_key]["initial_state"])
 
-            episode_name = f"task{task_id + 1}_trial{episode_idx + 1}"
+            episode_name = f"seed{seed_trial_index + 1}_task{task_id + 1}_trial{episode_idx + 1}"
             log_message(
                 f"Episode {total_episodes + 1}/{total_planned_episodes} ({episode_name})...",
                 log_file,
@@ -563,9 +613,14 @@ def run_task(
 
             all_trial_results.append(
                 {
+                    "master_seed": int(cfg.seed),
+                    "seed_trial_index": seed_trial_index + 1,
+                    "total_seed_trials": total_seed_trials,
+                    "env_seed": int(env_seed) if env_seed is not None else None,
                     "task_id": task_id + 1,
                     "task_description": task_description,
-                    "trial_index": episode_idx + 1,
+                    "trial_index": seed_trial_index * cfg.num_trials_per_task + episode_idx + 1,
+                    "episode_index": episode_idx + 1,
                     "success": 1 if success else 0,
                     "steps_taken": episode_result["steps_taken"],
                     "error": episode_result["error"],
@@ -616,7 +671,8 @@ def run_task(
 
     task_success_rate = float(task_successes) / float(task_episodes) if task_episodes > 0 else 0
 
-    append_episode_result_csv(episode_csv_path, task_description, task_successes, task_episodes)
+    episode_result_name = f"seed{seed_trial_index + 1}_env{env_seed}_{task_description}"
+    append_episode_result_csv(episode_csv_path, episode_result_name, task_successes, task_episodes)
 
     log_message(
         f"Final Task Success/Total: {task_successes}/{task_episodes} "
@@ -632,6 +688,7 @@ def eval_libero(cfg: GenerateConfig) -> float:
     """Main function to evaluate a trained policy on LIBERO benchmark tasks."""
     validate_config(cfg)
     set_seed_everywhere(cfg.seed)
+    seed_list = resolve_seed_list(cfg)
 
     model, action_head, proprio_projector, noisy_action_projector, processor = initialize_model(cfg)
     model.eval()
@@ -644,41 +701,76 @@ def eval_libero(cfg: GenerateConfig) -> float:
     save_dirs = prepare_save_dirs(cfg)
     episode_csv_path = save_dirs["metrics"] / f"{cfg.save_tag}_episodes.csv"
     summary_csv_path = save_dirs["metrics"] / f"{cfg.save_tag}_summary.csv"
+    seed_summary_csv_path = save_dirs["metrics"] / f"{cfg.save_tag}_seed_summary.csv"
+    seed_summary_json_path = save_dirs["metrics"] / f"{cfg.save_tag}_seed_summary.json"
     initialize_episode_results_csv(episode_csv_path)
+    initialize_seed_summary_csv(seed_summary_csv_path)
 
     task_suite_name = get_task_suite_name(cfg)
     benchmark_dict = benchmark.get_benchmark_dict()
     task_suite = benchmark_dict[task_suite_name]()
     num_tasks = task_suite.n_tasks
-    total_planned_episodes = num_tasks * cfg.num_trials_per_task
+    total_planned_episodes = len(seed_list) * num_tasks * cfg.num_trials_per_task
 
-    log_message(f"\n===== Starting trial (seed={cfg.seed}) =====", log_file)
+    log_message(f"\n===== Starting evaluation (master_seed={cfg.seed}) =====", log_file)
     log_message(f"Task suite: {task_suite_name}", log_file)
+    log_message(f"Seed trials: {len(seed_list)} | Env seeds: {seed_list}", log_file)
     log_message(f"Planned episodes: {total_planned_episodes}", log_file)
 
     total_episodes, total_successes = 0, 0
     all_trial_results = []
+    seed_summaries = []
     overall_start_time = time.monotonic()
     try:
-        for task_id in range(num_tasks):
-            total_episodes, total_successes = run_task(
-                cfg,
-                task_suite,
-                task_id,
-                num_tasks,
-                model,
-                resize_size,
-                processor,
-                action_head,
-                proprio_projector,
-                noisy_action_projector,
-                total_episodes,
-                total_successes,
-                total_planned_episodes,
-                overall_start_time,
-                save_dirs,
-                episode_csv_path,
-                all_trial_results,
+        for seed_trial_index, env_seed in enumerate(seed_list):
+            seed_start_episodes = total_episodes
+            seed_start_successes = total_successes
+            set_seed_everywhere(int(env_seed))
+            log_message(
+                f"\n===== Starting seed trial {seed_trial_index + 1}/{len(seed_list)} "
+                f"(env_seed={env_seed}) =====",
+                log_file,
+            )
+            for task_id in range(num_tasks):
+                total_episodes, total_successes = run_task(
+                    cfg,
+                    task_suite,
+                    task_id,
+                    num_tasks,
+                    model,
+                    resize_size,
+                    processor,
+                    action_head,
+                    proprio_projector,
+                    noisy_action_projector,
+                    total_episodes,
+                    total_successes,
+                    total_planned_episodes,
+                    overall_start_time,
+                    save_dirs,
+                    episode_csv_path,
+                    all_trial_results,
+                    int(env_seed),
+                    seed_trial_index,
+                    len(seed_list),
+                    log_file,
+                )
+
+            seed_episodes = total_episodes - seed_start_episodes
+            seed_successes = total_successes - seed_start_successes
+            seed_success_rate = seed_successes / seed_episodes if seed_episodes else 0.0
+            seed_summary = {
+                "seed_trial_index": seed_trial_index + 1,
+                "env_seed": int(env_seed),
+                "total_episodes": seed_episodes,
+                "total_successes": seed_successes,
+                "total_success_rate": seed_success_rate,
+            }
+            seed_summaries.append(seed_summary)
+            append_seed_summary_csv(seed_summary_csv_path, seed_summary)
+            log_message(
+                f"Final Seed Trial Success/Total: {seed_successes}/{seed_episodes} "
+                f"| Success Rate: {seed_success_rate:.4f}",
                 log_file,
             )
     finally:
@@ -700,6 +792,18 @@ def eval_libero(cfg: GenerateConfig) -> float:
         df_success_clean = create_clean_summary(trial_df, value_col="success")
         df_success_clean.to_csv(summary_csv_path)
         log_message(f"Saved summary metrics to {summary_csv_path}", log_file)
+
+    seed_summary = {
+        "master_seed": int(cfg.seed),
+        "trial_num": int(cfg.trial_num),
+        "env_seeds": [int(seed) for seed in seed_list],
+        "seed_summary_csv": str(seed_summary_csv_path),
+        "per_seed": seed_summaries,
+    }
+    with open(seed_summary_json_path, "w") as f:
+        json.dump(seed_summary, f, indent=2)
+    log_message(f"Saved seed summary to {seed_summary_csv_path}", log_file)
+    log_message(f"Saved seed summary metadata to {seed_summary_json_path}", log_file)
 
     if log_file:
         log_file.close()
