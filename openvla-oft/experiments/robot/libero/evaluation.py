@@ -93,13 +93,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 EPISODE_RESULT_COLUMNS = ["episode_name", "success counts", "total_counts", "success_rate"]
-SEED_SUMMARY_COLUMNS = [
-    "seed_trial_index",
-    "env_seed",
-    "total_episodes",
-    "total_successes",
-    "total_success_rate",
-]
 
 
 @dataclass
@@ -298,20 +291,34 @@ def prepare_save_dirs(cfg: GenerateConfig):
     save_root = Path("results")
     task_suite_name = get_task_suite_name(cfg)
     save_dirs = {
-        "action": save_root / "trajectories" / task_suite_name / cfg.save_tag / "action_history",
-        "eef": save_root / "trajectories" / task_suite_name / cfg.save_tag / "eefpos_history",
-        "joint": save_root / "trajectories" / task_suite_name / cfg.save_tag / "jointpos_history",
-        "action_chunks": save_root / "trajectories" / task_suite_name / cfg.save_tag / "action_chunks_history",
-        "rollout": save_root / "rollouts" / task_suite_name / cfg.save_tag,
-        "metrics": save_root / "metrics" / task_suite_name,
+        "trajectory_root": save_root / "trajectories" / task_suite_name / cfg.save_tag,
+        "rollout_root": save_root / "rollouts" / task_suite_name / cfg.save_tag,
+        "metrics": save_root / "metrics" / task_suite_name / cfg.save_tag,
     }
 
     for dir_type, path in save_dirs.items():
-        if path.is_dir() and dir_type in {"action", "eef", "joint", "action_chunks"}:
+        if path.is_dir() and dir_type in {"trajectory_root", "rollout_root"}:
             shutil.rmtree(path)
         path.mkdir(parents=True, exist_ok=True)
 
     return save_dirs
+
+
+def prepare_seed_save_dirs(save_dirs, env_seed):
+    seed_dir_name = f"seed_{int(env_seed)}"
+    seed_dirs = {
+        "action": save_dirs["trajectory_root"] / seed_dir_name / "action_history",
+        "eef": save_dirs["trajectory_root"] / seed_dir_name / "eefpos_history",
+        "joint": save_dirs["trajectory_root"] / seed_dir_name / "jointpos_history",
+        "action_chunks": save_dirs["trajectory_root"] / seed_dir_name / "action_chunks_history",
+        "rollout": save_dirs["rollout_root"] / seed_dir_name,
+        "metrics": save_dirs["metrics"] / seed_dir_name,
+    }
+
+    for path in seed_dirs.values():
+        path.mkdir(parents=True, exist_ok=True)
+
+    return seed_dirs
 
 
 def save_results(payload, save_dirs, cfg, log_file=None):
@@ -359,10 +366,6 @@ def initialize_episode_results_csv(csv_path):
     initialize_csv(csv_path, EPISODE_RESULT_COLUMNS)
 
 
-def initialize_seed_summary_csv(csv_path):
-    initialize_csv(csv_path, SEED_SUMMARY_COLUMNS)
-
-
 def append_episode_result_csv(csv_path, episode_name, success_counts, total_counts):
     success_rate = success_counts / total_counts if total_counts else 0.0
     row = {
@@ -372,10 +375,6 @@ def append_episode_result_csv(csv_path, episode_name, success_counts, total_coun
         "success_rate": success_rate,
     }
     append_csv_row(csv_path, row, EPISODE_RESULT_COLUMNS)
-
-
-def append_seed_summary_csv(csv_path, seed_summary):
-    append_csv_row(csv_path, seed_summary, SEED_SUMMARY_COLUMNS)
 
 
 def create_clean_summary(df, value_col, index_col="trial_index", col_col="task_description"):
@@ -550,6 +549,7 @@ def run_task(
     overall_start_time=None,
     save_dirs=None,
     episode_csv_path=None,
+    aggregate_episode_csv_path=None,
     all_trial_results=None,
     env_seed=None,
     seed_trial_index=0,
@@ -673,6 +673,8 @@ def run_task(
 
     episode_result_name = f"seed{seed_trial_index + 1}_env{env_seed}_{task_description}"
     append_episode_result_csv(episode_csv_path, episode_result_name, task_successes, task_episodes)
+    if aggregate_episode_csv_path is not None:
+        append_episode_result_csv(aggregate_episode_csv_path, episode_result_name, task_successes, task_episodes)
 
     log_message(
         f"Final Task Success/Total: {task_successes}/{task_episodes} "
@@ -699,12 +701,9 @@ def eval_libero(cfg: GenerateConfig) -> float:
     resize_size = get_image_resize_size(cfg)
     log_file = setup_logging(cfg)
     save_dirs = prepare_save_dirs(cfg)
-    episode_csv_path = save_dirs["metrics"] / f"{cfg.save_tag}_episodes.csv"
-    summary_csv_path = save_dirs["metrics"] / f"{cfg.save_tag}_summary.csv"
-    seed_summary_csv_path = save_dirs["metrics"] / f"{cfg.save_tag}_seed_summary.csv"
-    seed_summary_json_path = save_dirs["metrics"] / f"{cfg.save_tag}_seed_summary.json"
-    initialize_episode_results_csv(episode_csv_path)
-    initialize_seed_summary_csv(seed_summary_csv_path)
+    overall_episode_csv_path = save_dirs["metrics"] / f"{cfg.save_tag}_overall_seed_episodes.csv"
+    overall_summary_csv_path = save_dirs["metrics"] / f"{cfg.save_tag}_overall_seed_summary.csv"
+    initialize_episode_results_csv(overall_episode_csv_path)
 
     task_suite_name = get_task_suite_name(cfg)
     benchmark_dict = benchmark.get_benchmark_dict()
@@ -719,12 +718,17 @@ def eval_libero(cfg: GenerateConfig) -> float:
 
     total_episodes, total_successes = 0, 0
     all_trial_results = []
-    seed_summaries = []
     overall_start_time = time.monotonic()
     try:
         for seed_trial_index, env_seed in enumerate(seed_list):
+            seed_save_dirs = prepare_seed_save_dirs(save_dirs, env_seed)
+            seed_episode_csv_path = seed_save_dirs["metrics"] / f"{cfg.save_tag}_episodes.csv"
+            seed_clean_summary_csv_path = seed_save_dirs["metrics"] / f"{cfg.save_tag}_summary.csv"
+            initialize_episode_results_csv(seed_episode_csv_path)
+
             seed_start_episodes = total_episodes
             seed_start_successes = total_successes
+            seed_start_result_index = len(all_trial_results)
             set_seed_everywhere(int(env_seed))
             log_message(
                 f"\n===== Starting seed trial {seed_trial_index + 1}/{len(seed_list)} "
@@ -747,8 +751,9 @@ def eval_libero(cfg: GenerateConfig) -> float:
                     total_successes,
                     total_planned_episodes,
                     overall_start_time,
-                    save_dirs,
-                    episode_csv_path,
+                    seed_save_dirs,
+                    seed_episode_csv_path,
+                    overall_episode_csv_path,
                     all_trial_results,
                     int(env_seed),
                     seed_trial_index,
@@ -759,15 +764,12 @@ def eval_libero(cfg: GenerateConfig) -> float:
             seed_episodes = total_episodes - seed_start_episodes
             seed_successes = total_successes - seed_start_successes
             seed_success_rate = seed_successes / seed_episodes if seed_episodes else 0.0
-            seed_summary = {
-                "seed_trial_index": seed_trial_index + 1,
-                "env_seed": int(env_seed),
-                "total_episodes": seed_episodes,
-                "total_successes": seed_successes,
-                "total_success_rate": seed_success_rate,
-            }
-            seed_summaries.append(seed_summary)
-            append_seed_summary_csv(seed_summary_csv_path, seed_summary)
+            append_episode_result_csv(seed_episode_csv_path, "Total", seed_successes, seed_episodes)
+            seed_trial_results = all_trial_results[seed_start_result_index:]
+            if seed_trial_results:
+                seed_trial_df = pd.DataFrame(seed_trial_results)
+                seed_success_clean = create_clean_summary(seed_trial_df, value_col="success")
+                seed_success_clean.to_csv(seed_clean_summary_csv_path)
             log_message(
                 f"Final Seed Trial Success/Total: {seed_successes}/{seed_episodes} "
                 f"| Success Rate: {seed_success_rate:.4f}",
@@ -779,31 +781,19 @@ def eval_libero(cfg: GenerateConfig) -> float:
 
     final_success_rate = float(total_successes) / float(total_episodes) if total_episodes > 0 else 0
 
-    append_episode_result_csv(episode_csv_path, "Total", total_successes, total_episodes)
+    append_episode_result_csv(overall_episode_csv_path, "Total", total_successes, total_episodes)
     log_message(
         f"Final Total Success/Total: {total_successes}/{total_episodes} "
         f"| Success Rate: {final_success_rate:.4f}",
         log_file,
     )
-    log_message(f"Saved episode metrics to {episode_csv_path}", log_file)
+    log_message(f"Saved overall episode metrics to {overall_episode_csv_path}", log_file)
 
     if all_trial_results:
         trial_df = pd.DataFrame(all_trial_results)
         df_success_clean = create_clean_summary(trial_df, value_col="success")
-        df_success_clean.to_csv(summary_csv_path)
-        log_message(f"Saved summary metrics to {summary_csv_path}", log_file)
-
-    seed_summary = {
-        "master_seed": int(cfg.seed),
-        "trial_num": int(cfg.trial_num),
-        "env_seeds": [int(seed) for seed in seed_list],
-        "seed_summary_csv": str(seed_summary_csv_path),
-        "per_seed": seed_summaries,
-    }
-    with open(seed_summary_json_path, "w") as f:
-        json.dump(seed_summary, f, indent=2)
-    log_message(f"Saved seed summary to {seed_summary_csv_path}", log_file)
-    log_message(f"Saved seed summary metadata to {seed_summary_json_path}", log_file)
+        df_success_clean.to_csv(overall_summary_csv_path)
+        log_message(f"Saved overall summary metrics to {overall_summary_csv_path}", log_file)
 
     if log_file:
         log_file.close()
