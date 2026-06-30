@@ -337,7 +337,6 @@ backup_*.md
 *~
 .hydra
 *.pyc
-datasets/
 results/
 outputs/*
 MUJOCO_LOG.TXT
