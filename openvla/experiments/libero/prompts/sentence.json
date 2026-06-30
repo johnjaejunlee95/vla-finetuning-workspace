@@ -1,0 +1,170 @@
+{
+    "libero_object": [
+        {
+            "original_prompt": "pick up the alphabet soup and place it in the basket",
+            "new_prompt": "Can you carefully pick up the alphabet soup, then immediately place it in the basket?"
+        },
+        {
+            "original_prompt": "pick up the cream cheese and place it in the basket",
+            "new_prompt": "Please pick up the cream cheese first and afterwards gently place it in the basket."
+        },
+        {
+            "original_prompt": "pick up the salad dressing and place it in the basket",
+            "new_prompt": "Would you kindly pick up the salad dressing and then, with care, place it in the basket?"
+        },
+        {
+            "original_prompt": "pick up the bbq sauce and place it in the basket",
+            "new_prompt": "I’d like you to pick up the bbq sauce and subsequently place it in the basket."
+        },
+        {
+            "original_prompt": "pick up the ketchup and place it in the basket",
+            "new_prompt": "You should pick up the ketchup first, and then slowly place it in the basket."
+        },
+        {
+            "original_prompt": "pick up the tomato sauce and place it in the basket",
+            "new_prompt": "Kindly pick up the tomato sauce and afterwards place it in the basket with care."
+        },
+        {
+            "original_prompt": "pick up the butter and place it in the basket",
+            "new_prompt": "Please, pick up the butter and then promptly place it in the basket."
+        },
+        {
+            "original_prompt": "pick up the milk and place it in the basket",
+            "new_prompt": "Could you pick up the milk first and subsequently place it in the basket?"
+        },
+        {
+            "original_prompt": "pick up the chocolate pudding and place it in the basket",
+            "new_prompt": "Would you please pick up the chocolate pudding and then carefully place it in the basket?"
+        },
+        {
+            "original_prompt": "pick up the orange juice and place it in the basket",
+            "new_prompt": "Please pick up the orange juice and immediately place it in the basket."
+        }
+    ],
+    "libero_goal": [
+        {
+            "original_prompt": "open the middle drawer of the cabinet",
+            "new_prompt": "Could you slowly open the middle drawer of the cabinet?"
+        },
+        {
+            "original_prompt": "put the bowl on the stove",
+            "new_prompt": "Please put the bowl on the stove, ensuring it is done carefully."
+        },
+        {
+            "original_prompt": "put the wine bottle on top of the cabinet",
+            "new_prompt": "I’d like you to put the wine bottle on top of the cabinet with a gentle touch."
+        },
+        {
+            "original_prompt": "open the top drawer and put the bowl inside",
+            "new_prompt": "Can you open the top drawer and then, without delay, put the bowl inside?"
+        },
+        {
+            "original_prompt": "put the bowl on top of the cabinet",
+            "new_prompt": "Please, without hesitation, put the bowl on top of the cabinet."
+        },
+        {
+            "original_prompt": "push the plate to the front of the stove",
+            "new_prompt": "Would you please push the plate to the front of the stove in a steady manner?"
+        },
+        {
+            "original_prompt": "put the cream cheese in the bowl",
+            "new_prompt": "You should put the cream cheese in the bowl, taking care as you do so."
+        },
+        {
+            "original_prompt": "turn on the stove",
+            "new_prompt": "Kindly turn on the stove as your next step."
+        },
+        {
+            "original_prompt": "put the bowl on the plate",
+            "new_prompt": "Please put the bowl on the plate, making sure it is aligned properly."
+        },
+        {
+            "original_prompt": "put the wine bottle on the rack",
+            "new_prompt": "Can you put the wine bottle on the rack when you have a moment?"
+        }
+    ],
+    "libero_spatial": [
+        {
+            "original_prompt": "pick up the black bowl between the plate and the ramekin and place it on the plate",
+            "new_prompt": "Could you pick up the black bowl that is between the plate and the ramekin, and then place it on the plate with care?"
+        },
+        {
+            "original_prompt": "pick up the black bowl next to the ramekin and place it on the plate",
+            "new_prompt": "Please pick up the black bowl located next to the ramekin and afterwards place it on the plate."
+        },
+        {
+            "original_prompt": "pick up the black bowl from table center and place it on the plate",
+            "new_prompt": "From the table center, please pick up the black bowl and then place it on the plate."
+        },
+        {
+            "original_prompt": "pick up the black bowl on the cookie box and place it on the plate",
+            "new_prompt": "Would you pick up the black bowl on the cookie box and subsequently place it on the plate?"
+        },
+        {
+            "original_prompt": "pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate",
+            "new_prompt": "I’d like you to pick up the black bowl in the top drawer of the wooden cabinet and then place it on the plate gently."
+        },
+        {
+            "original_prompt": "pick up the black bowl on the ramekin and place it on the plate",
+            "new_prompt": "Please pick up the black bowl on the ramekin and then place it on the plate without delay."
+        },
+        {
+            "original_prompt": "pick up the black bowl next to the cookie box and place it on the plate",
+            "new_prompt": "Can you pick up the black bowl next to the cookie box and afterward place it on the plate?"
+        },
+        {
+            "original_prompt": "pick up the black bowl on the stove and place it on the plate",
+            "new_prompt": "Would you kindly pick up the black bowl on the stove and then place it on the plate?"
+        },
+        {
+            "original_prompt": "pick up the black bowl next to the plate and place it on the plate",
+            "new_prompt": "Please pick up the black bowl next to the plate and subsequently place it on the plate."
+        },
+        {
+            "original_prompt": "pick up the black bowl on the wooden cabinet and place it on the plate",
+            "new_prompt": "You should pick up the black bowl on the wooden cabinet and finally place it on the plate with attention."
+        }
+    ],
+    "libero_10": [
+        {
+            "original_prompt": "put both the alphabet soup and the tomato sauce in the basket",
+            "new_prompt": "Could you please put both the alphabet soup and the tomato sauce into the basket?"
+        },
+        {
+            "original_prompt": "put both the cream cheese box and the butter in the basket",
+            "new_prompt": "I'd like you to take the cream cheese box and the butter, then carefully place them both in the basket."
+        },
+        {
+            "original_prompt": "turn on the stove and put the moka pot on it",
+            "new_prompt": "Kindly turn on the stove and then place the moka pot on top of it."
+        },
+        {
+            "original_prompt": "put the black bowl in the bottom drawer of the cabinet and close it",
+            "new_prompt": "Please put the black bowl into the bottom drawer of the cabinet and remember to close it afterward."
+        },
+        {
+            "original_prompt": "put the white mug on the left plate and put the yellow and white mug on the right plate",
+            "new_prompt": "Would you place the white mug on the left plate and the yellow and white mug on the right plate?"
+        },
+        {
+            "original_prompt": "pick up the book and place it in the back compartment of the caddy",
+            "new_prompt": "Can you pick up the book and subsequently place it in the back compartment of the caddy?"
+        },
+        {
+            "original_prompt": "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+            "new_prompt": "Please put the white mug on the plate and then set the chocolate pudding down to the right of it."
+        },
+        {
+            "original_prompt": "put both the alphabet soup and the cream cheese box in the basket",
+            "new_prompt": "You should place both the alphabet soup and the cream cheese box into the basket with care."
+        },
+        {
+            "original_prompt": "put both moka pots on the stove",
+            "new_prompt": "Could you please arrange both moka pots on the stove?"
+        },
+        {
+            "original_prompt": "put the yellow and white mug in the microwave and close it",
+            "new_prompt": "Kindly put the yellow and white mug inside the microwave and then close the door."
+        }
+    ]
+}
