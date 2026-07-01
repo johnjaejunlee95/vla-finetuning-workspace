@@ -388,6 +388,39 @@ def create_clean_summary(df, value_col, index_col="trial_index", col_col="task_d
     return pd.concat([pivot_df, stats])
 
 
+def create_overall_seed_episode_summary(df):
+    seed_indices = sorted(df["seed_trial_index"].unique())
+    seed_col_names = {seed_idx: f"seed {seed_idx}" for seed_idx in seed_indices}
+    seed_cols = [seed_col_names[seed_idx] for seed_idx in seed_indices]
+
+    task_stats = (
+        df.groupby(["task_id", "task_description", "seed_trial_index"], as_index=False)["success"]
+        .mean()
+        .sort_values(["task_id", "seed_trial_index"])
+    )
+    summary = task_stats.pivot_table(
+        index=["task_id", "task_description"],
+        columns="seed_trial_index",
+        values="success",
+        aggfunc="first",
+    )
+    summary = summary.sort_index(level="task_id")
+    summary = summary.rename(columns=seed_col_names)
+    summary = summary.reindex(columns=seed_cols)
+    summary["Average"] = summary[seed_cols].mean(axis=1)
+    summary["std"] = summary[seed_cols].std(axis=1)
+
+    summary = summary.reset_index().drop(columns=["task_id"]).rename(columns={"task_description": "task description"})
+    average_row = {"task description": "Average"}
+    for seed_col in seed_cols:
+        average_row[seed_col] = summary[seed_col].mean()
+    average_row["Average"] = summary["Average"].mean()
+    average_row["std"] = pd.Series([average_row[seed_col] for seed_col in seed_cols]).std()
+
+    summary = pd.concat([summary, pd.DataFrame([average_row])], ignore_index=True)
+    return summary[["task description", *seed_cols, "Average", "std"]].round(4)
+
+
 def load_initial_states(cfg: GenerateConfig, task_suite, task_id: int, log_file=None):
     """Load initial states for the given task."""
     # Get default initial states
@@ -549,7 +582,6 @@ def run_task(
     overall_start_time=None,
     save_dirs=None,
     episode_csv_path=None,
-    aggregate_episode_csv_path=None,
     all_trial_results=None,
     env_seed=None,
     seed_trial_index=0,
@@ -673,8 +705,6 @@ def run_task(
 
     episode_result_name = f"seed{seed_trial_index + 1}_env{env_seed}_{task_description}"
     append_episode_result_csv(episode_csv_path, episode_result_name, task_successes, task_episodes)
-    if aggregate_episode_csv_path is not None:
-        append_episode_result_csv(aggregate_episode_csv_path, episode_result_name, task_successes, task_episodes)
 
     log_message(
         f"Final Task Success/Total: {task_successes}/{task_episodes} "
@@ -703,7 +733,6 @@ def eval_libero(cfg: GenerateConfig) -> float:
     save_dirs = prepare_save_dirs(cfg)
     overall_episode_csv_path = save_dirs["metrics"] / f"{cfg.save_tag}_overall_seed_episodes.csv"
     overall_summary_csv_path = save_dirs["metrics"] / f"{cfg.save_tag}_overall_seed_summary.csv"
-    initialize_episode_results_csv(overall_episode_csv_path)
 
     task_suite_name = get_task_suite_name(cfg)
     benchmark_dict = benchmark.get_benchmark_dict()
@@ -753,7 +782,6 @@ def eval_libero(cfg: GenerateConfig) -> float:
                     overall_start_time,
                     seed_save_dirs,
                     seed_episode_csv_path,
-                    overall_episode_csv_path,
                     all_trial_results,
                     int(env_seed),
                     seed_trial_index,
@@ -781,16 +809,18 @@ def eval_libero(cfg: GenerateConfig) -> float:
 
     final_success_rate = float(total_successes) / float(total_episodes) if total_episodes > 0 else 0
 
-    append_episode_result_csv(overall_episode_csv_path, "Total", total_successes, total_episodes)
     log_message(
         f"Final Total Success/Total: {total_successes}/{total_episodes} "
         f"| Success Rate: {final_success_rate:.4f}",
         log_file,
     )
-    log_message(f"Saved overall episode metrics to {overall_episode_csv_path}", log_file)
 
     if all_trial_results:
         trial_df = pd.DataFrame(all_trial_results)
+        overall_episode_summary = create_overall_seed_episode_summary(trial_df)
+        overall_episode_summary.to_csv(overall_episode_csv_path, index=False)
+        log_message(f"Saved overall episode metrics to {overall_episode_csv_path}", log_file)
+
         df_success_clean = create_clean_summary(trial_df, value_col="success")
         df_success_clean.to_csv(overall_summary_csv_path)
         log_message(f"Saved overall summary metrics to {overall_summary_csv_path}", log_file)
