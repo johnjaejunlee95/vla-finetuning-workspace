@@ -1,0 +1,170 @@
+{
+    "libero_object": [
+        {
+            "original_prompt": "pick up the alphabet soup and place it in the basket",
+            "new_prompt": "I like basketball.  pick up the al phabet soup ,  and place it in the basket"
+        },
+        {
+            "original_prompt": "pick up the cream cheese and place it in the basket",
+            "new_prompt": "pick up the CReam cheese  and place it in the basket   I think you can do it, maybe?"
+        },
+        {
+            "original_prompt": "pick up the salad dressing and place it in the basket",
+            "new_prompt": "today is a gOood day! Or not? pick up the salad drressing, and place it in the basket"
+        },
+        {
+            "original_prompt": "pick up the bbq sauce and place it in the basket",
+            "new_prompt": "pick up the bbq sauce  and placae it in the basket   I am not happy today!"
+        },
+        {
+            "original_prompt": "pick up the ketchup and place it in the basket",
+            "new_prompt": "I like swimming.  pick up the keytchup, and place it in the basket"
+        },
+        {
+            "original_prompt": "pick up the tomato sauce and place it in the basket",
+            "new_prompt": "pick up the tomato sauce and  place it in the basket   I think you can do it, maybe?"
+        },
+        {
+            "original_prompt": "pick up the butter and place it in the basket",
+            "new_prompt": "Today is a good day! Or not? pick up the butter  andD place it in the basket"
+        },
+        {
+            "original_prompt": "pick up the milk and place it in the basket",
+            "new_prompt": "pick up the milk and  place it in the basket   I am not happy today!"
+        },
+        {
+            "original_prompt": "pick up the chocolate pudding and place it in the basket",
+            "new_prompt": "I like basketball.  pick up the chocolate pUdding, and place it in the basket"
+        },
+        {
+            "original_prompt": "pick up the orange juice and place it in the basket",
+            "new_prompt": "Pick up the orange juice and place it in the basket   today is a good day! Or not?"
+        }
+    ],
+    "libero_goal": [
+        {
+            "original_prompt": "open the middle drawer of the cabinet",
+            "new_prompt": "I think you can do it, maybe? open the middle drawer, of the Cabinet"
+        },
+        {
+            "original_prompt": "put the bowl on the stove",
+            "new_prompt": "put the bowl on the stove   I like basketball."
+        },
+        {
+            "original_prompt": "put the wine bottle on top of the cabinet",
+            "new_prompt": "today is a good day! Or not?  put the wine bottle on top  of the cabinet"
+        },
+        {
+            "original_prompt": "open the top drawer and put the bowl inside",
+            "new_prompt": "open the top . drawer and put the bowl inside   I am not happy today!"
+        },
+        {
+            "original_prompt": "put the bowl on top of the cabinet",
+            "new_prompt": "I like swimming. put the bowl on top  of the cabinet"
+        },
+        {
+            "original_prompt": "push the plate to the front of the stove",
+            "new_prompt": "Push the plate to the front of the stove   I think you can do it, maybe?"
+        },
+        {
+            "original_prompt": "put the cream cheese in the bowl",
+            "new_prompt": "I enjoy music.  put the cream cheese in the bowl"
+        },
+        {
+            "original_prompt": "turn on the stove",
+            "new_prompt": "turN on the stove   today is a good day! Or not?"
+        },
+        {
+            "original_prompt": "put the bowl on the plate",
+            "new_prompt": "I am not happy today! put the bowl on the plate"
+        },
+        {
+            "original_prompt": "put the wine bottle on the rack",
+            "new_prompt": "put the wine bottle on the rack   I like basketball."
+        }
+    ],
+    "libero_spatial": [
+        {
+            "original_prompt": "pick up the black bowl between the plate and the ramekin and place it on the plate",
+            "new_prompt": "I think you can do IT, maybe? pick up the black bBBowl, between the plate and the ramekin and place it on the plate"
+        },
+        {
+            "original_prompt": "pick up the black bowl next to the ramekin and place it on the plate",
+            "new_prompt": "pick up the black bowl next TO the ramekin and place it on the plate   I am not happy today!"
+        },
+        {
+            "original_prompt": "pick up the black bowl from table center and place it on the plate",
+            "new_prompt": "I like swimming. pick up the bLack bowl from table center and place it on the plate"
+        },
+        {
+            "original_prompt": "pick up the black bowl on the cookie box and place it on the plate",
+            "new_prompt": "pick up the black bowl on the cookie Box and place it on the plate   today is a good day! Or not?"
+        },
+        {
+            "original_prompt": "pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate",
+            "new_prompt": "I like basketball. pick up the black bowl in the top drawer of the wooden cabinet, and place it on the plate"
+        },
+        {
+            "original_prompt": "pick up the black bowl on the ramekin and place it on the plate",
+            "new_prompt": "PICk up the black bowl on the ramekin and place it on the plate   I think you can do it, maybe?"
+        },
+        {
+            "original_prompt": "pick up the black bowl next to the cookie box and place it on the plate",
+            "new_prompt": "I enjoy music. pick uP THE black bowl next to the cookie box and place it on the plate"
+        },
+        {
+            "original_prompt": "pick up the black bowl on the stove and place it on the plate",
+            "new_prompt": "pick up the black bowl on the stove and place it on the plate   I like swimming."
+        },
+        {
+            "original_prompt": "pick up the black bowl next to the plate and place it on the plate",
+            "new_prompt": "I am not happy today! pIck up the black bowl next to the platea andy place it on the plate"
+        },
+        {
+            "original_prompt": "pick up the black bowl on the wooden cabinet and place it on the plate",
+            "new_prompt": "pick up the black bowl on the wooden cabinet and pLace it on the plate   I think you can do it, maybe?"
+        }
+    ],
+    "libero_10": [
+        {
+            "original_prompt": "put both the alphabet soup and the tomato sauce in the basket",
+            "new_prompt": "I like basketball. pUt both the al phabet soup , and the tomato sauce in the BASKET"
+        },
+        {
+            "original_prompt": "put both the cream cheese box and the butter in the basket",
+            "new_prompt": "put both the CReam cheese box  and the butter in the basket   I think you can do it, maybe?"
+        },
+        {
+            "original_prompt": "turn on the stove and put the moka pot on it",
+            "new_prompt": "today is a gOood day! Or not? turN on the stove, and put the moka pOt on it"
+        },
+        {
+            "original_prompt": "put the black bowl in the bottom drawer of the cabinet and close it",
+            "new_prompt": "put the black bBBowl in the bottom drawer of the cabinet  and cloose it   I am not happy today!"
+        },
+        {
+            "original_prompt": "put the white mug on the left plate and put the yellow and white mug on the right plate",
+            "new_prompt": "I like swimming. put the white muG on the left plate , and put the yellow and white mug on the right plate"
+        },
+        {
+            "original_prompt": "pick up the book and place it in the back compartment of the caddy",
+            "new_prompt": "pick up the bOook and pLace it in the back compartment of the caddy   I think you can do it, maybe?"
+        },
+        {
+            "original_prompt": "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+            "new_prompt": "Today is a good day! Or not? put the white mug on the plate  andD put the chocolate pUdding to the right of the plate"
+        },
+        {
+            "original_prompt": "put both the alphabet soup and the cream cheese box in the basket",
+            "new_prompt": "put both the alphabet soup and  the cream cheese box in the basket   I am not happy today!"
+        },
+        {
+            "original_prompt": "put both moka pots on the stove",
+            "new_prompt": "I like basketball.  put both moka pOts  on the stove"
+        },
+        {
+            "original_prompt": "put the yellow and white mug in the microwave and close it",
+            "new_prompt": "Put the yellow and white mug in the microwave and  close it   today is a good day! Or not?"
+        }
+    ]
+}

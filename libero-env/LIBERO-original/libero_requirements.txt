@@ -1,0 +1,8 @@
+imageio[ffmpeg]
+robosuite==1.4.1
+bddl
+easydict
+cloudpickle
+gym
+numpy===1.26.4
+opencv-python==4.11.0.86

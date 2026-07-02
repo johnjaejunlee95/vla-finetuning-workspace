@@ -1,0 +1,5 @@
+assets: libero/assets
+bddl_files: libero/bddl_files
+benchmark_root: libero
+datasets: datasets
+init_states: libero/init_files
