@@ -36,7 +36,6 @@ from transformers import logging as hf_logging
 hf_logging.set_verbosity_error()
 
 from libero_utils import (
-    create_clean_summary,
     get_libero_dummy_action,
     get_libero_env,
     get_libero_image,
@@ -58,7 +57,7 @@ torch.set_float32_matmul_precision("high")
 
 TRIAL_RESULT_COLUMNS = [
     "task_suite",
-    "sam_type",
+    "save_tag",
     "seed",
     "task_id",
     "task_name",
@@ -189,12 +188,10 @@ def create_statistics_table(trial_df):
     return pd.DataFrame(rows, columns=columns)
 
 
-def get_result_table_paths(result_dir, suite_name, run_name):
-    suite_result_dir = os.path.join(result_dir, suite_name)
-    os.makedirs(suite_result_dir, exist_ok=True)
-    result_path = os.path.join(suite_result_dir, f"{run_name}.csv")
-    statistics_path = os.path.join(suite_result_dir, f"{run_name}_statistics.csv")
-    return result_path, statistics_path
+def get_result_table_paths(metrics_dir, run_name, task_suite_name):
+    os.makedirs(metrics_dir, exist_ok=True)
+    statistics_path = os.path.join(metrics_dir, f"statistics_{run_name}_{task_suite_name}.csv")
+    return statistics_path
 
 
 def initialize_csv(csv_path, columns):
@@ -243,10 +240,9 @@ class GenerateConfig:
     task_categories: Optional[str] = None
     num_steps_wait: int = 10
     num_trials_per_task: int = 1
-    sam_type: str = "SAM"
+    save_tag: str = "none"
 
     seed: int = 1122
-    result_dir: str = "savel_results3/results"
 
 
 @draccus.wrap()
@@ -273,7 +269,7 @@ def main(cfg: GenerateConfig):
     else:
         processor = None
 
-    run_name = cfg.sam_type
+    run_name = cfg.save_tag
     logger = setup_logger()
 
     max_steps_limit = MAX_STEPS_BY_SUITE.get(cfg.task_suite_name, 400)
@@ -292,19 +288,13 @@ def main(cfg: GenerateConfig):
 
     total_episodes, total_successes = 0, 0
     all_trial_results = []
-    metrics_dir = f"results/metrics/{cfg.task_suite_name}"
+    metrics_dir = os.path.join("results", "LIBERO-Plus", "metrics", str(cfg.task_categories))
     os.makedirs(metrics_dir, exist_ok=True)
-    episode_csv_path = f"{metrics_dir}/{cfg.sam_type}_episodes.csv"
+    episode_csv_path = os.path.join(metrics_dir, f"episodes_{cfg.save_tag}_{cfg.task_suite_name}.csv")
     initialize_episode_results_csv(episode_csv_path)
-    result_path, statistics_path = get_result_table_paths(
-        cfg.result_dir,
-        cfg.task_suite_name,
-        run_name,
-    )
-    initialize_csv(result_path, TRIAL_RESULT_COLUMNS)
+    statistics_path = get_result_table_paths(metrics_dir, run_name, cfg.task_suite_name)
     logger.info("Planned episodes: %d", total_planned_episodes)
     logger.info("Episode result table: %s", episode_csv_path)
-    logger.info("Detailed result table: %s", result_path)
 
     if cfg.prompt_file != "original":
         with open(f"prompts/{cfg.prompt_file}.json", "r") as f:
@@ -401,7 +391,7 @@ def main(cfg: GenerateConfig):
 
             result_row = {
                 "task_suite": cfg.task_suite_name,
-                "sam_type": cfg.sam_type,
+                "save_tag": cfg.save_tag,
                 "seed": random_seeds,
                 "task_id": task_id + 1,
                 "task_name": task.name,
@@ -421,7 +411,6 @@ def main(cfg: GenerateConfig):
                 "total_time_left_sec": overall_left,
             })
             all_trial_results.append(result_row)
-            append_csv_row(result_path, result_row, TRIAL_RESULT_COLUMNS)
             append_episode_result_csv(
                 episode_csv_path,
                 episode_name,
@@ -467,22 +456,11 @@ def main(cfg: GenerateConfig):
         total_successes / total_episodes,
     )
 
-    trial_df = pd.DataFrame(all_trial_results)
-    df_success_clean = create_clean_summary(
-        trial_df,
-        value_col="success",
-        col_col="episode_name",
-    )
-    summary_path = f"{metrics_dir}/{cfg.sam_type}_summary.csv"
-    df_success_clean.to_csv(summary_path)
-
     write_statistics_table(
         all_trial_results,
         statistics_path,
     )
     logger.info("Finished. Episode result table: %s", episode_csv_path)
-    logger.info("Finished. Clean summary table: %s", summary_path)
-    logger.info("Finished. Overall result table: %s", result_path)
     logger.info("Finished. Statistics table: %s", statistics_path)
 
 

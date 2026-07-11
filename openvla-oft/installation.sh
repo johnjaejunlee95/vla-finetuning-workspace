@@ -13,7 +13,7 @@ else
 fi
 
 conda activate "$ENV_NAME"
-conda install conda-forge::imagemagick # This is for LIBERO-plus
+conda install conda-forge::imagemagick -y # This is for LIBERO-plus
 
 pip install torch torchvision torchaudio
 pip install -e .
@@ -26,9 +26,9 @@ pip install pandas
 
 
 cd ../libero-env/
-pip install -e LIBERO-original
+pip install -e LIBERO-original/.
 pip install -r LIBERO-original/libero_requirements.txt
 
-pip install -e LIBERO-plus
-pip install -r LIBERO-plus/requirements.txt
+pip install -e LIBERO-plus/.
+pip install -r LIBERO-plus/libero_requirements.txt
 pip install mujoco==3.3.2

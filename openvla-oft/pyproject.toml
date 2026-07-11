@@ -49,6 +49,7 @@ dependencies = [
     "torchaudio==2.2.0",
     "transformers @ git+https://github.com/moojink/transformers-openvla-oft.git",  # IMPORTANT: Use this fork for bidirectional attn (for parallel decoding)
     "wandb",
+    "wand",
     "tensorflow==2.15.0",
     "tensorflow_datasets==4.9.3",
     "tensorflow_graphics==2021.12.3",

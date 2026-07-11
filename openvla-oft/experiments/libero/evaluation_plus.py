@@ -149,7 +149,7 @@ class GenerateConfig:
     #################################################################################################################
     # Utils
     #################################################################################################################
-    save_tag: str = "openvla_oft"                    # File tag for saved CSV metrics
+    save_tag: str = "none"                    # File tag for saved CSV metrics
 
     seed: int = 7                                    # Random Seed (for reproducibility)
 
@@ -282,11 +282,10 @@ def create_statistics_table(trial_df):
     return pd.DataFrame(rows, columns=columns)
 
 
-def get_result_table_paths(metrics_dir, run_name):
+def get_result_table_paths(metrics_dir, run_name, task_suite_name):
     os.makedirs(metrics_dir, exist_ok=True)
-    result_path = os.path.join(metrics_dir, f"{run_name}.csv")
-    statistics_path = os.path.join(metrics_dir, f"{run_name}_statistics.csv")
-    return result_path, statistics_path
+    statistics_path = os.path.join(metrics_dir, f"statistics_{run_name}_{task_suite_name}.csv")
+    return statistics_path
 
 
 def format_duration(seconds):
@@ -319,8 +318,9 @@ def estimate_time_left(elapsed_seconds, completed, total):
 
 def prepare_metrics_dir(cfg: GenerateConfig):
     save_root = Path("results")
-    task_suite_name = get_task_suite_name(cfg)
-    metrics_dir = save_root / "LIBERO-Plus" / "metrics" / task_suite_name
+    
+    sam_type = Path(cfg.pretrained_checkpoint).stem
+    metrics_dir = save_root / "LIBERO-Plus" / f"{sam_type}" / cfg.task_categories 
 
     metrics_dir.mkdir(parents=True, exist_ok=True)
 
@@ -515,7 +515,6 @@ def run_task(
     total_planned_episodes=0,
     overall_start_time=None,
     episode_csv_path=None,
-    result_path=None,
     all_trial_results=None,
     prompts=None,
     log_file=None,
@@ -614,7 +613,6 @@ def run_task(
                 "error": episode_result["error"],
             }
             all_trial_results.append(result_row)
-            append_csv_row(result_path, result_row, TRIAL_RESULT_COLUMNS)
             append_episode_result_csv(episode_csv_path, episode_name, success_flag, 1)
 
             log_message(
@@ -647,6 +645,8 @@ def eval_libero(cfg: GenerateConfig) -> float:
     """Main function to evaluate a trained policy on LIBERO benchmark tasks."""
     validate_config(cfg)
     set_seed_everywhere(cfg.seed)
+    
+    print(cfg)
 
     model, action_head, proprio_projector, noisy_action_projector, processor = initialize_model(cfg)
     model.eval()
@@ -659,14 +659,13 @@ def eval_libero(cfg: GenerateConfig) -> float:
     run_name = cfg.save_tag
     log_file = None
     metrics_dir = prepare_metrics_dir(cfg)
-    episode_csv_path = metrics_dir / f"{cfg.save_tag}_episodes.csv"
-    summary_csv_path = metrics_dir / f"{cfg.save_tag}_summary.csv"
+    episode_csv_path = metrics_dir / f"episodes_{cfg.save_tag}_{task_suite_name}.csv"
     initialize_episode_results_csv(episode_csv_path)
-    result_path, statistics_path = get_result_table_paths(metrics_dir, run_name)
-    initialize_csv(result_path, TRIAL_RESULT_COLUMNS)
+    statistics_path = get_result_table_paths(metrics_dir, run_name, task_suite_name)
 
     task_categories = parse_task_categories(cfg.task_categories)
     benchmark_dict = benchmark.get_benchmark_dict()
+    
     task_suite = benchmark_dict[task_suite_name](task_categories=task_categories)
     num_tasks = task_suite.n_tasks
     total_planned_episodes = num_tasks * cfg.num_trials_per_task
@@ -679,7 +678,6 @@ def eval_libero(cfg: GenerateConfig) -> float:
         log_message(f"Selected {num_tasks} tasks from {task_suite_name}", log_file)
     log_message(f"Planned episodes: {total_planned_episodes}", log_file)
     log_message(f"Episode result table: {episode_csv_path}", log_file)
-    log_message(f"Detailed result table: {result_path}", log_file)
 
     prompts = None
     if cfg.prompt_file != "original":
@@ -706,7 +704,6 @@ def eval_libero(cfg: GenerateConfig) -> float:
             total_planned_episodes,
             overall_start_time,
             episode_csv_path,
-            result_path,
             all_trial_results,
             prompts,
             log_file,
@@ -722,16 +719,8 @@ def eval_libero(cfg: GenerateConfig) -> float:
     )
     log_message(f"Saved episode metrics to {episode_csv_path}", log_file)
 
-    if all_trial_results:
-        trial_df = pd.DataFrame(all_trial_results)
-        df_success_clean = create_clean_summary(trial_df, value_col="success", col_col="episode_name")
-        df_success_clean.to_csv(summary_csv_path)
-        log_message(f"Saved summary metrics to {summary_csv_path}", log_file)
-
     write_statistics_table(all_trial_results, statistics_path)
     log_message(f"Finished. Episode result table: {episode_csv_path}", log_file)
-    log_message(f"Finished. Clean summary table: {summary_csv_path}", log_file)
-    log_message(f"Finished. Overall result table: {result_path}", log_file)
     log_message(f"Finished. Statistics table: {statistics_path}", log_file)
 
     return final_success_rate
