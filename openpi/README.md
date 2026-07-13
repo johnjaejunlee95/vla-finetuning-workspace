@@ -47,7 +47,6 @@ NOTE: `GIT_LFS_SKIP_SMUDGE=1` is needed to pull LeRobot as a dependency.
 
 
 
-
 ## Model Checkpoints
 
 ### Base Models
@@ -128,7 +127,7 @@ Full fine-tuning without LoRA requires substantially more GPU memory than LoRA /
 
 **Note:** We provide functionality for *reloading* normalization statistics for state / action normalization from pre-training. This can be beneficial if you are fine-tuning to a new task on a robot that was part of our pre-training mixture. For more details on how to reload normalization statistics, see the [norm_stats.md](docs/norm_stats.md) file.
 
-### 4. Spinning up a policy server and running inference
+### 4. Evaluation
 
 Once training is complete, we can run inference by spinning up a policy server and then querying it from a LIBERO evaluation script. Launching a model server is easy (we use the checkpoint for iteration 20,000 for this example, modify as needed):
 
@@ -138,14 +137,14 @@ uv run scripts/serve_policy.py policy:checkpoint --policy.config=pi05_libero --p
 
 This will spin up a server that listens on port 8000 and waits for observations to be sent to it. We can then run an evaluation script (or robot runtime) that queries the server.
 
-For running the LIBERO eval in particular, we provide (and recommend using) a Dockerized workflow that handles both the policy server and the evaluation script together. See the [LIBERO README](examples/libero/README.md) for more details.
+Before running evaluations for LIBERO benchamrks, see the [LIBERO README](examples/libero/README.md) for instructions on how to set up the LIBERO environment and run the evaluation script.
 
 If you want to embed a policy server call in your own robot runtime, we have a minimal example of how to do so in the [remote inference docs](docs/remote_inference.md).
 
 To share my evaluation experience, I prepared a bash script that launches policy servers and LIBERO evaluation jobs. The example below is the setup I used in practice; adjust `CPU_LISTS`, checkpoint paths, ports, and task suites for your own environment:
 
+#### LIBERO Evaluations
 ```bash
-
 source examples/libero/.venv/bin/activate
 export PYTHONPATH=$PYTHONPATH:$PWD/third_party/libero
 export XLA_PYTHON_CLIENT_MEM_FRACTION=0.95
@@ -164,6 +163,52 @@ CUDA_VISIBLE_DEVICES=0 taskset --cpu-list ${CPU_LISTS[0]} python examples/libero
 CUDA_VISIBLE_DEVICES=1 taskset --cpu-list ${CPU_LISTS[1]} python examples/libero/main.py --args.task-suite-name libero_object --args.methods pi05-libero-full-baseline --args.seeds 42 --args.port 4930 --args.trial_num 3 &
 CUDA_VISIBLE_DEVICES=2 taskset --cpu-list ${CPU_LISTS[2]} python examples/libero/main.py --args.task-suite-name libero_goal --args.methods pi05-libero-full-baseline --args.seeds 42 --args.port 1031 --args.trial_num 3 &
 CUDA_VISIBLE_DEVICES=3 taskset --cpu-list ${CPU_LISTS[3]} python examples/libero/main.py --args.task-suite-name libero_10 --args.methods pi05-libero-full-baseline --args.seeds 42 --args.port 1234 --args.trial_num 3 &
+```
+
+#### LIBERO-Plus Evaluations
+```bash
+source examples/libero/.venv/bin/activate
+export PYTHONPATH=$PYTHONPATH:$PWD/../libero-env/LIBERO-plus
+export XLA_PYTHON_CLIENT_MEM_FRACTION=0.95
+
+task_categories=("Language Instructions" "Background Textures" "Camera Viewpoints" "Light Conditions" "Objects Layout" "Robot Initial States" "Sensor Noise")
+task_tag=("language" "background" "camera" "light" "object" "robot_states" "sensor")
+
+for i in "${!task_categories[@]}"; do
+
+    tasks=${task_categories[$i]}
+    tags=${task_tag[$i]}
+
+    CUDA_VISIBLE_DEVICES=0 taskset --cpu-list ${CPU_LISTS[0]} uv run scripts/serve_policy.py --port 1234 --env LIBERO_pi05 policy:checkpoint --policy.config pi05_libero --policy.dir /nfs4/jjlee/openpi/pi05-LIBERO-full-baseline/30000 &
+    SERVER_PID1=$!
+
+    CUDA_VISIBLE_DEVICES=1 taskset --cpu-list ${CPU_LISTS[1]} uv run scripts/serve_policy.py --port 1031 --env LIBERO_pi05 policy:checkpoint --policy.config pi05_libero --policy.dir /nfs4/jjlee/openpi/pi05-LIBERO-full-baseline/30000 &
+    SERVER_PID2=$!
+
+    CUDA_VISIBLE_DEVICES=2 taskset --cpu-list ${CPU_LISTS[2]} uv run scripts/serve_policy.py --port 1739 --env LIBERO_pi05 policy:checkpoint --policy.config pi05_libero --policy.dir /nfs4/jjlee/openpi/pi05-LIBERO-full-baseline/30000 &
+    SERVER_PID3=$!
+
+    CUDA_VISIBLE_DEVICES=3 taskset --cpu-list ${CPU_LISTS[3]} uv run scripts/serve_policy.py --port 4930 --env LIBERO_pi05 policy:checkpoint --policy.config pi05_libero --policy.dir /nfs4/jjlee/openpi/pi05-LIBERO-full-baseline/30000 &
+    SERVER_PID4=$!
+
+    sleep 10
+
+    CUDA_VISIBLE_DEVICES=0 taskset --cpu-list ${CPU_LISTS[0]} python examples/libero/main_plus.py --args.task-suite-name libero_spatial --args.methods pi05-baseline --args.seeds 42 --args.port 1234 --args.task_categories "$tasks" --args.tags "$tags" &
+    PID1=$!
+
+    CUDA_VISIBLE_DEVICES=1 taskset --cpu-list ${CPU_LISTS[1]} python examples/libero/main_plus.py --args.task-suite-name libero_object  --args.methods pi05-baseline --args.seeds 42 --args.port 1031 --args.task_categories "$tasks" --args.tags "$tags" &
+    PID2=$!
+
+    CUDA_VISIBLE_DEVICES=2 taskset --cpu-list ${CPU_LISTS[2]} python examples/libero/main_plus.py --args.task-suite-name libero_goal --args.methods pi05-baseline --args.seeds 42 --args.port 1739 --args.task_categories "$tasks" --args.tags "$tags" &
+    PID3=$!
+
+    CUDA_VISIBLE_DEVICES=3 taskset --cpu-list ${CPU_LISTS[3]} python examples/libero/main_plus.py --args.task-suite-name libero_10  --args.methods pi05-baseline --args.seeds 42 --args.port 4930 --args.task_categories "$tasks" --args.tags "$tags" &
+    PID4=$!
+
+    wait $PID1 $PID2 $PID3 $PID4
+    kill $SERVER_PID1 $SERVER_PID2 $SERVER_PID3 $SERVER_PID4
+
+done
 ```
 
 ### More Examples

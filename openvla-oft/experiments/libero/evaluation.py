@@ -78,8 +78,8 @@ def get_task_suite_name(cfg) -> str:
 # Define max steps for each task suite
 TASK_MAX_STEPS = {
     TaskSuite.LIBERO_SPATIAL: 220,  # longest training demo has 193 steps
-    TaskSuite.LIBERO_OBJECT: 280,  # longest training demo has 254 steps
-    TaskSuite.LIBERO_GOAL: 300,  # longest training demo has 270 steps
+    TaskSuite.LIBERO_OBJECT: 260,  # longest training demo has 254 steps
+    TaskSuite.LIBERO_GOAL: 280,  # longest training demo has 270 steps
     TaskSuite.LIBERO_10: 520,  # longest training demo has 505 steps
     TaskSuite.LIBERO_90: 400,  # longest training demo has 373 steps
 }

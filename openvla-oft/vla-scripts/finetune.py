@@ -936,10 +936,7 @@ def finetune(cfg: FinetuneConfig) -> None:
 
     # Create experiment run directory
     run_dir = cfg.run_root_dir / run_id
-    # os.makedirs(run_dir, exist_ok=True)
-    save_path = cfg.save_path
-    if save_path is None:
-        save_path = cfg.run_root_dir
+    save_path = cfg.run_root_dir / cfg.save_path if cfg.save_path is not None else cfg.run_root_dir 
     save_path = Path(save_path)
     os.makedirs(save_path, exist_ok=True)
     checkpoint_path = resolve_checkpoint_path(cfg, run_dir, save_path)

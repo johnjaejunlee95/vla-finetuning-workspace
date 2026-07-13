@@ -74,10 +74,10 @@ TRIAL_RESULT_COLUMNS = [
 
 EPISODE_RESULT_COLUMNS = ["episode_name", "success counts", "total_counts", "success_rate"]
 MAX_STEPS_BY_SUITE = {
-    "libero_spatial": 240,
-    "libero_object": 280,
-    "libero_goal": 300,
-    "libero_10": 450,
+    "libero_spatial": 220,
+    "libero_object": 260,
+    "libero_goal": 280,
+    "libero_10": 520,
     "libero_90": 400,
 }
 

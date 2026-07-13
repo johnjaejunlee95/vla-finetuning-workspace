@@ -72,10 +72,10 @@ def get_task_suite_name(cfg) -> str:
 
 
 TASK_MAX_STEPS = {
-    TaskSuite.LIBERO_SPATIAL: 240,
-    TaskSuite.LIBERO_OBJECT: 280,
-    TaskSuite.LIBERO_GOAL: 300,
-    TaskSuite.LIBERO_10: 450,
+    TaskSuite.LIBERO_SPATIAL: 220,
+    TaskSuite.LIBERO_OBJECT: 260,
+    TaskSuite.LIBERO_GOAL: 280,
+    TaskSuite.LIBERO_10: 520,
     TaskSuite.LIBERO_90: 400,
 }
 

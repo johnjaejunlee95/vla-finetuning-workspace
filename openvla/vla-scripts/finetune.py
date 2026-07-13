@@ -35,9 +35,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 import draccus
+import random
 import torch
 import torch.distributed as dist
 from collections import deque
+import tensorflow as tf
 from tqdm import tqdm
 tqdm.disable = True
 
@@ -46,7 +48,7 @@ from accelerate import PartialState
 from peft import LoraConfig, PeftModel, get_peft_model, prepare_model_for_kbit_training
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import AdamW
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, IterableDataset
 from transformers import (
     AutoConfig,
     AutoImageProcessor,
@@ -132,11 +134,8 @@ def finetune(cfg: FinetuneConfig) -> None:
 
     torch.backends.cudnn.benchmark = True
 
-    save_path = cfg.save_path
-    if cfg.save_path is None:
-        save_path = cfg.run_root_dir
-    run_dir, adapter_dir = cfg.run_root_dir, cfg.run_root_dir / cfg.adapter_dir
-    os.makedirs(run_dir, exist_ok=True)
+    save_path = cfg.run_root_dir / cfg.save_path if cfg.save_path is not None else cfg.run_root_dir    
+    os.makedirs(cfg.run_root_dir, exist_ok=True)
     os.makedirs(save_path, exist_ok=True)
 
     quantization_config = None
@@ -194,7 +193,6 @@ def finetune(cfg: FinetuneConfig) -> None:
         gamma=0.1,
     )
     
-    start_step = 0
     start_step = 0
     if cfg.resume:
         checkpoint = torch.load(f"{save_path}/optimizer_state_dict_ckpt.pt", map_location="cpu")

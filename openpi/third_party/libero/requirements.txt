@@ -1,9 +1,9 @@
  hydra-core==1.2.0
- numpy==1.22.4 
+ numpy==1.26.4 
  wandb==0.13.1 
  easydict==1.9 
  transformers==4.21.1
- opencv-python==4.6.0.66 
+ opencv-python==4.11.0.86
  robomimic==0.2.0 
  einops==0.4.1
  thop==0.1.1-2209072238
