@@ -19,7 +19,7 @@ import torch
 import torch.distributed as dist
 import torch.nn as nn
 from accelerate import PartialState
-from huggingface_hub import HfApi, snapshot_download
+from huggingface_hub import snapshot_download
 from peft import LoraConfig, PeftModel, get_peft_model
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import AdamW
@@ -30,7 +30,7 @@ from transformers.modeling_outputs import CausalLMOutputWithPast
 
 import wandb
 
-from experiments.robot.openvla_utils import (
+from experiments.openvla_utils import (
     check_model_logic_mismatch,
     model_is_on_hf_hub,
     update_auto_map,
@@ -936,7 +936,7 @@ def finetune(cfg: FinetuneConfig) -> None:
 
     # Create experiment run directory
     run_dir = cfg.run_root_dir / run_id
-    os.makedirs(run_dir, exist_ok=True)
+    # os.makedirs(run_dir, exist_ok=True)
     save_path = cfg.save_path
     if save_path is None:
         save_path = cfg.run_root_dir
@@ -1139,7 +1139,7 @@ def finetune(cfg: FinetuneConfig) -> None:
     scheduler = StepLR(
         optimizer,
         step_size=cfg.lr_scheduler_stepsize,
-        gamma=0.1,
+        gamma=0.2,
     )
     start_step = int(cfg.resume_step or 0)
     if cfg.resume:

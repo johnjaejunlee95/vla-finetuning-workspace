@@ -34,6 +34,7 @@ pip install transformers==4.49.0
 
 # You need to download the flash_attn wheel file from https://github.com/Dao-AILab/flash-attention/releases/tag/v2.5.5
 wget https://github.com/Dao-AILab/flash-attention/releases/download/v2.5.5/flash_attn-2.5.5+cu122torch2.2cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
-pip install flash_attn-2.5.5+cu122torch2.2cxx11abiFALSE-cp310-cp310-linux_x86_64.whl 
+pip install flash_attn-2.5.5+cu122torch2.2cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
+rm flash_attn-2.5.5+cu122torch2.2cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
 pip install pandas
 pip install imageio

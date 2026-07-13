@@ -35,11 +35,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 import draccus
-import random
 import torch
 import torch.distributed as dist
 from collections import deque
-import tensorflow as tf
 from tqdm import tqdm
 tqdm.disable = True
 
@@ -48,7 +46,7 @@ from accelerate import PartialState
 from peft import LoraConfig, PeftModel, get_peft_model, prepare_model_for_kbit_training
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import AdamW
-from torch.utils.data import DataLoader, IterableDataset
+from torch.utils.data import DataLoader
 from transformers import (
     AutoConfig,
     AutoImageProcessor,
@@ -70,7 +68,6 @@ from prismatic.vla.datasets.rlds.utils.data_utils import save_dataset_statistics
 
 import warnings
 warnings.filterwarnings("ignore")
-torch.set_float32_matmul_precision("high")
 
 @dataclass
 class FinetuneConfig:
@@ -254,11 +251,6 @@ def finetune(cfg: FinetuneConfig) -> None:
         shuffle_buffer_size=cfg.shuffle_buffer_size,
         image_aug=cfg.image_aug,
     )
-    
-    # if hasattr(vla_dataset, "dataset"):
-    #     if distributed_state.is_main_process:
-    #         print("Injecting tf.data.AUTOTUNE prefetch to RLDSDataset...")
-    #     vla_dataset.dataset = vla_dataset.dataset.prefetch(tf.data.AUTOTUNE)
 
     if distributed_state.is_main_process:
         save_dataset_statistics(vla_dataset.dataset_statistics, save_path)

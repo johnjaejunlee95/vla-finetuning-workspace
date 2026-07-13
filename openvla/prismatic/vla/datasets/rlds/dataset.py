@@ -241,8 +241,8 @@ def make_dataset_from_rlds(
     world_size = int(os.environ.get("WORLD_SIZE", "1"))
     rank = int(os.environ.get("RANK", "0"))
     if train and world_size > 1:
-        if rank == 0:
-            print(f"Sharding dataset {name} for distributed training: world_size={world_size}, rank={rank}")
+        # if rank == 0:
+        print(f"Sharding dataset {name} for distributed training: world_size={world_size}, rank={rank}")
         dataset = dataset.shard(num_shards=world_size, index=rank)
 
     
